@@ -1,21 +1,39 @@
 #!/bin/bash
 #Script Name: ATM
 #This script only holds up to 9999 bank accounts
+userMenu() {
+  currentAcctNum=$1
+  name=$(grep $inputAcctPin accountsFile | cut -d":" -f2)
+  echo $name
+
+  cat << EOF
+  Hello $grep
+  Display Balance
+  Withdraw funds
+  Deposit Funds
+  Mini Statement
+  Logout
+EOF
+}
 
 userLogin() {
   read -p "Enter your accountNumber: " inputAcctNum
-  actualAcctNum=$(cut -d":" -f3 accountsFile | grep inputAcctNum)
+  actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
   while [[ $actualAcctNum = "" ]]
   do
     read -p "Please enter a valid accountNumber: " inputAcctNum
+    actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
   done
 
-  actualAcctPin=$(grep 4144 accountsFile | cut -d":" -f1)
   read -p "Enter your pin: " inputAcctPin
-  while[[ $inputAcctPin ]]
+  actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
+  while [[ ! $actualAcctPin -eq inputAcctPin ]]
   do
-    read -p "Enter your pin: " inputAcctPin
+    read -p "Enter your pin CORRECTLY: " inputAcctPin
+    #actualAcctPin=$(grep $inputAcctPin  accountsFile | cut -d":" -f1)
   done
+
+  userMenu $inputAcctNum
 }
 
 makeNewUser() {
@@ -29,7 +47,7 @@ makeNewUser() {
   read -p "Enter your last name: " lastName
   fullName="$firstName""_""$lastName"
 
-  read -p "Enter your initial deposit ammount: " depositAmt
+  read -p "Enter your initial deposit ammount: " depositAmt  
   while [[ $userPin -lt 1000 || $userPin -gt 9999 ]]
   do
     echo  "Enter the 4 digit pin you will like to use"
@@ -37,18 +55,17 @@ makeNewUser() {
   done
 
   userAcctNum=$(shuf -i 1000-9999 -n 1)
+  userAcctNum=$(($userAcctNum + 10010000))
 
   echo "Your account number is: $userAcctNum please remember it!"
   echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile
 
-  userTransactions="$userAcctNum:$fullName"
+  userTransactions="$userAcctNum" #need to add A at the end it so it doesn't grab balance else 
   #echo $userTransactions
   touch transactionHistories/$userTransactions
-  echo "balance: $depositAmt" >> $userTransactions
-  echo "+$depositAmt" >> $userTransactions
-
+  echo "balance: $depositAmt" >> transactionHistories/$userTransactions
+  echo "+$depositAmt" >> transactionHistories/$userTransactions
 }
-
 
 welcomeScreen() {
   echo which would you like to do?
@@ -65,3 +82,11 @@ welcomeScreen() {
       userLogin ;;
   esac
 }
+
+startATM() {
+  welcomeScreen
+}
+
+startATM
+
+
