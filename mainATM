@@ -1,0 +1,46 @@
+
+  1 #!/bin/bash
+  2 #Script Name: ATM
+  3 #This script only holds up to 9999 bank accounts
+  4
+  5 userLogin() {
+  6   echo hold
+  7 }
+  8
+  9 makeNewUser() {
+ 10   userPin=0
+ 11   read -p "Enter your name: " fullName
+ 12   read -p "Enter your initial deposit ammount: " depositAmt
+ 13   while [[ $userPin -lt 1000 || $userPin -gt 9999 ]]
+ 14   do
+ 15     echo  "Enter the 4 digit pin you will like to use"
+ 16     read userPin </dev/tty
+ 17   done
+ 18
+ 19   userAcctNum=$(shuf -i 1000-9999 -n 1)
+ 20
+ 21   echo "Your account number is: $userAcctNum please remember it!"
+ 22   echo "$userPin:$fullName:$userAcctNum:$depositAmt"
+ 23 }
+ 24
+ 25 welcomeScreen() {
+ 26   echo which would you like to do?
+ 27   echo New User
+ 28   echo Existing User
+ 29   read -p ":" userAns
+ 30
+ 31   echo $userAns
+ 32
+ 33   case $userAns in
+ 34     "New User")
+ 35       makeNewUser ;;
+ 36     "Existing User")
+ 37       userLogin ;;
+ 38   esac
+ 39 }
+ 40
+ 41 startATM() {
+ 42   welcomeScreen
+ 43 }
+ 44
+ 45 startATM
