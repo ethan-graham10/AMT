@@ -1,92 +1,141 @@
 #!/bin/bash
 #Script Name: ATM
 #This script only holds up to 9999 bank accounts
-userMenu() {
-  currentAcctNum=$1
-  name=$(grep $inputAcctPin accountsFile | cut -d":" -f2)
-  echo $name
+withdraw() {
+        cat << EOF
 
-  cat << EOF
-  Hello $grep
-  Display Balance
-  Withdraw funds
-  Deposit Funds
-  Mini Statement
-  Logout
+        How much would you like to withdraw? Please input option exactly as you see it.
+        \$10, \$20, \$50, \$100, \$200, Other amount, Back to main
 EOF
+
+        read -p ":" wdAmt
+
+        balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
+
+
+
+}
+
+userMenu() {
+        currentAcctNum=$1
+        name=$(grep $inputAcctPin accountsFile | cut -d":" -f2)
+
+        cat << EOF
+
+  Welcome $name
+        1) Display Balance
+        2) Withdraw funds
+        3) Deposit Funds
+        4) Mini Statement
+        5) Logout
+EOF
+
+        echo Please enter the corresponding number to the option you want
+        read -p ":" option
+
+        case $option in
+                "1")
+                        echo " "
+                        echo $(cat transactionHistories/$currentAcctNum | head -1)
+                        userMenu $currentAcctNum;;
+                "2")
+                        withdraw $currentAcctNum
+                        userMenu $currrentAcctNum;;
+                "3")
+                        deposit $currentAcctNum
+                        userMenu $currentAcctNum;;
+                "4")
+                        miniStatement $currentAcctNum
+                        userMenu $currentAcctNum;;
+                "5")
+                        welcomeScreen;;
+                *)
+                        echo " "
+                        userMenu $currentAcctNum;;
+        esac
 }
 
 userLogin() {
-  read -p "Enter your accountNumber: " inputAcctNum
-  actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
-  while [[ $actualAcctNum = "" ]]
-  do
-    read -p "Please enter a valid accountNumber: " inputAcctNum
-    actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
-  done
+        read -p "Enter your accountNumber: " inputAcctNum
+        actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
+        while [[ $actualAcctNum = "" ]]
+        do
+                read -p "Please enter a valid accountNumber: " inputAcctNum
+                actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
+        done
 
-  read -p "Enter your pin: " inputAcctPin
-  actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
-  while [[ ! $actualAcctPin -eq inputAcctPin ]]
-  do
-    read -p "Enter your pin CORRECTLY: " inputAcctPin
-    #actualAcctPin=$(grep $inputAcctPin  accountsFile | cut -d":" -f1)
-  done
+        read -p "Enter your pin: " inputAcctPin
+        actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
+        while [[ ! $actualAcctPin -eq inputAcctPin ]]
+        do
+                read -p "Enter your pin CORRECTLY: " inputAcctPin
+                #actualAcctPin=$(grep $inputAcctPin  accountsFile | cut -d":" -f1)
+        done
 
+#       name=$(grep $inputAcctPin accountsFile | cut -d":" -f2)
+
+#       echo " "
+#       echo " "
+#       echo Welcome $name
   userMenu $inputAcctNum
 }
 
 makeNewUser() {
-  if [ ! -d ./transactionHistories ] ; then
-    mkdir transactionHistories
-  fi
+        if [ ! -d ./transactionHistories ] ; then
+                mkdir transactionHistories
+        fi
 
-  userPin=0
+        userPin=0
 
-  read -p "Enter your first name: " firstName
-  read -p "Enter your last name: " lastName
-  fullName="$firstName""_""$lastName"
+        read -p "Enter your first name: " firstName
+        read -p "Enter your last name: " lastName
+        fullName="$firstName""_""$lastName"
 
-  read -p "Enter your initial deposit ammount: " depositAmt  
-  while [[ $userPin -lt 1000 || $userPin -gt 9999 ]]
-  do
-    echo  "Enter the 4 digit pin you will like to use"
-    read userPin </dev/tty
-  done
+        read -p "Enter your initial deposit ammount: " depositAmt
+        while [[ $userPin -lt 1000 || $userPin -gt 9999 ]]
+        do
+                echo  "Enter the 4 digit pin you will like to use"
+                read userPin </dev/tty
+        done
 
-  userAcctNum=$(shuf -i 1000-9999 -n 1)
-  userAcctNum=$(($userAcctNum + 10010000))
+        userAcctNum=$(shuf -i 1000-9999 -n 1)
+        userAcctNum=$(($userAcctNum + 10010000))
 
-  echo "Your account number is: $userAcctNum please remember it!"
-  echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile
+        echo "Your account number is: $userAcctNum please remember it!"
+        echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile
 
-  userTransactions="$userAcctNum" #need to add A at the end it so it doesn't grab balance else 
-  #echo $userTransactions
-  touch transactionHistories/$userTransactions
-  echo "balance: $depositAmt" >> transactionHistories/$userTransactions
-  echo "+$depositAmt" >> transactionHistories/$userTransactions
+        userTransactions="$userAcctNum" #need to add A at the end it so it doesn't grab balance else
+        #echo $userTransactions
+        touch transactionHistories/$userTransactions
+        echo "Balance: $depositAmt" >> transactionHistories/$userTransactions
+        echo "+$depositAmt" >> transactionHistories/$userTransactions
 }
 
 welcomeScreen() {
-  echo which would you like to do?
-  echo New User
-  echo Existing User
-  read -p ":" userAns
+        echo which would you like to do?
+        echo New User
+        echo Existing User
+        echo Exit ATM
+        read -p ":" userAns
 
-  echo $userAns
+        echo $userAns
 
-  case $userAns in
-    "New User")
-      makeNewUser ;;
-    "Existing User")
-      userLogin ;;
-  esac
+        case $userAns in
+                "New User")
+                        makeNewUser ;;
+                "Existing User")
+                        userLogin ;;
+                "Exit ATM")
+                        exit;;
+                *)
+                        echo " "
+                        echo "Please input a valid option"
+                        welcomeScreen;;
+        esac
 }
 
 startATM() {
-  welcomeScreen
+        welcomeScreen
 }
 
 startATM
-
-
