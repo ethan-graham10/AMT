@@ -5,15 +5,34 @@ withdraw() {
         cat << EOF
 
         How much would you like to withdraw? Please input option exactly as you see it.
-        \$10, \$20, \$50, \$100, \$200, Other amount, Back to main
+        \$10, \$20, \$50, \$100, \$200, Other amount(simply input number), Back to main
 EOF
 
         read -p ":" wdAmt
 
         balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
 
+        echo $balance
+        if [[ $wdAmt =~ ^[0-9]+$ || $wdAmt = "Back to main" ]] ; then
+                if [[ $wdAmt = "Back to main" ]] ; then
+                        userMenu;
+                elif [[ $wdAmt > $balance ]] ; then
+                        echo "Please input a number that won't overdraft your account"
+                        withdraw;
+                else
+                        newBalance=$(($balance - $wdAmt))
+                fi
+        else
+                echo Please input a valid option
+                withdraw;
+        fi
 
+  #oldTrans=$(cat transactionHistories/$currentAcctNum |  -1)
 
+  echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
+        cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
+        rm transactionHistories/$currentAcctNum
+        mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
 }
 
 userMenu() {
