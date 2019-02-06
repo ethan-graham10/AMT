@@ -1,6 +1,46 @@
+
 #!/bin/bash
 #Script Name: ATM
 #This script only holds up to 9999 bank accounts
+miniStatement() {
+        cat << EOF
+        Account Name: $(grep $inputAcctNum accountsFile | cut -d":" -f2)
+        Account Number: $currentAcctNum
+        Date: $(date +%D)
+        Time: $(date +%R)
+EOF
+
+while read line
+do
+        echo $line
+done < "$(transactionHistories/$currentAcctNum)"
+
+
+        #decide on formating
+        #Put me in the EOF:::Account Balance: $(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
+        #cat transactionHistories/$currentAcctNum | grep -w -v Balance
+        #cat transactionHistories/$currentAcctNum
+}
+
+deposit() {
+          read -p "How much would you like to deposit?: " depoAmt
+                if [[ $depoAmt =~ ^[0-9]+$ ]] ; then
+                balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
+                        newBalance=$(($balance + $depoAmt));
+                else
+                        echo Please input a valid option
+                        depoAmt;
+                fi
+
+  echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
+        cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
+        rm transactionHistories/$currentAcctNum
+        mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
+        echo +$depoAmt >> transactionHistories/$currentAcctNum
+
+        echo Deposit Complete
+}
+
 withdraw() {
         cat << EOF
 
@@ -12,7 +52,6 @@ EOF
 
         balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
 
-        echo $alance
         if [[ $wdAmt =~ ^[0-9]+$ || $wdAmt = "Back to main" ]] ; then
         ###############we are here in the above if. make sure that if the initial deposit is 100, withdraw 20 works
                 if [[ $wdAmt = "Back to main" ]] ; then
@@ -28,12 +67,11 @@ EOF
                 withdraw;
         fi
 
-  #oldTrans=$(cat transactionHistories/$currentAcctNum |  -1)
-
   echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
         cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
         rm transactionHistories/$currentAcctNum
         mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
+  echo -$wdAmt >> transactionHistories/$currentAcctNum
 }
 
 userMenu() {
@@ -127,7 +165,7 @@ makeNewUser() {
 }
 
 welcomeScreen() {
-        echo which would you like to do?
+        echo Which would you like to do, Please input exactly as you see it?
         echo New User
         echo Existing User
         echo Exit ATM
@@ -137,7 +175,8 @@ welcomeScreen() {
 
         case $userAns in
                 "New User")
-                        makeNewUser ;;
+                        makeNewUser
+                        welcomeScreen;;
                 "Existing User")
                         userLogin ;;
                 "Exit ATM")
