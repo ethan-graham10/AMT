@@ -17,7 +17,7 @@
 # This function prints a mini bank statement
 #
 # This function will display the current users:
-#               Names
+#               Name
 #               Account Number
 #               The current date
 #               The current time
@@ -65,7 +65,6 @@ EOF
 # (Args): None
 #
 # (Key Side effects):
-#
 #   transtionHistories/currentAcctNum:
 #                       Function changes the balance of the file to the new balance
 #                       with the current deposit.
@@ -148,13 +147,12 @@ EOF
 #               Allow the user to logout back to the welcome screen
 #
 # (Params):
-#
 #               currentAcctNum : str
 #                       The account number for the logged in user
 #
-# (Args):
+# (Args): None
 #
-# (Key Side effects):
+# (Key Side Effects): None
 #===================================================================
 userMenu() {
         currentAcctNum=$1
@@ -205,11 +203,10 @@ EOF
 # (Params): None
 #
 #       (Args):
-#
 #               inputAcctNum : str
 #                       Sends the account number for this login to the userMenu
 #
-#       (Key Side effects):
+#       (Key Side Effects): None
 #===================================================================
 userLogin() {
         read -p "Enter your accountNumber: " inputAcctNum
@@ -244,21 +241,22 @@ userLogin() {
 #
 # (Params): None
 #
-# (Key Side effects)
+#       (Args): None
 #
-#       userAcctNum : str
-#               The account number for the user
+# (Key Side Effects)
+#               userAcctNum : str
+#                       The account number for the user
 #
-#       transactionHistories : directory
-#               The directory that will hold the files used to hold the
-#               transaction history for each user
+#               transactionHistories : directory
+#                       The directory that will hold the files used to hold the
+#                       transaction history for each user
 #
-#       transactionHistories/$userTransactions : file
-#       The file that holds the transaction history for the user
+#               transactionHistories/$userTransactions : file
+#               The file that holds the transaction history for the user
 #
-# accountsFile : file
-#               Holds the account info for the users in the format:
-#               pin:name of the user:account number: initial deposit
+#       accountsFile : file
+#                       Holds the account info for the users in the format:
+#                       'pin:name of the user:account number:initial deposit'
 #===================================================================
 makeNewUser() {
         if [ ! -d ./transactionHistories ] ; then
@@ -297,6 +295,10 @@ makeNewUser() {
 #               or Exit the ATM all together.
 #
 # (Params): None
+#
+#       (Args): None
+#
+#       (Key Side Effects): None
 #===================================================================
 
 welcomeScreen() {
