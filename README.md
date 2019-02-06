@@ -1,5 +1,5 @@
 # ATM
-(Work in progress) This script makes an ATM 
+This script makes an ATM 
 
 This script: 
   holds up to 9999 bank accounts 
