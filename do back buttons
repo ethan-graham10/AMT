@@ -1,0 +1,190 @@
+#!/bin/bash
+#Script Name: ATM
+#This script only holds up to 9999 bank accounts
+miniStatement() {
+        if [[ $(cat transactionHistories/$currentAcctNum | wc -l) -gt 6 ]] ; then
+                transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance | tail -5)
+        else
+                transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance)
+        fi
+
+        cat << EOF
+        Your Mini-Account Statement
+
+Account Name: $(grep $inputAcctNum accountsFile | cut -d":" -f2)
+Account Number: $currentAcctNum
+
+Date: $(date +%D)
+Time: $(date +%R)
+
+$(cat transactionHistories/$currentAcctNum | grep -w Balance)
+
+Your transactions are: (up to your last 5)
+$transHist
+EOF
+}
+
+deposit() {
+          read -p "How much would you like to deposit?: " depoAmt
+                if [[ $depoAmt =~ ^[0-9]+$ ]] ; then
+                balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
+                        newBalance=$(($balance + $depoAmt));
+                else
+                        echo Please input a valid option
+                        depoAmt;
+                fi
+
+  echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
+        cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
+        rm transactionHistories/$currentAcctNum
+        mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
+        echo +$depoAmt >> transactionHistories/$currentAcctNum
+
+        echo Deposit Complete
+}
+
+withdraw() {
+        #dont use globals $this?.currentAcctNum=$1
+        cat << EOF
+
+        How much would you like to withdraw? Please input option exactly as you see it.
+        \$10, \$20, \$50, \$100, \$200, Other amount(simply input number),
+        --back to main currently unavailable
+EOF
+
+        read -p ":" wdAmt
+        balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
+
+        while [[ ! $wdAmt =~ ^[0-9]+$ || $wdAmt -gt $balance ]]
+        do
+                echo "Please input a number that won't overdraft your account or 'Back to main'"
+                read -p ":" wdAmt
+        done
+
+        newBalance=$(($balance - $wdAmt))
+
+  echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
+        cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
+        rm transactionHistories/$currentAcctNum
+        mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
+  echo -$wdAmt >> transactionHistories/$currentAcctNum
+
+        echo Withdraw Complete
+}
+
+userMenu() {
+        currentAcctNum=$1
+        name=$(grep $currentAcctNum accountsFile | cut -d":" -f2,3 | grep $currentAcctNum | cut -d":" -f1 )
+        cat << EOF
+
+  Welcome $name
+        1) Display Balance
+        2) Withdraw funds
+        3) Deposit Funds
+        4) Mini Statement
+        5) Logout
+EOF
+
+        echo Please enter the corresponding number to the option you want
+        read -p ":" option
+
+        case $option in
+                "1")
+                        echo " "
+                        echo $(cat transactionHistories/$currentAcctNum | head -1)
+                        userMenu $currentAcctNum;;
+                "2")
+                        withdraw $currentAcctNum
+                        userMenu $currentAcctNum;;
+                "3")
+                        deposit $currentAcctNum
+                        userMenu $currentAcctNum;;
+                "4")
+                        miniStatement $currentAcctNum
+                        userMenu $currentAcctNum;;
+                "5")
+                        welcomeScreen;;
+                *)
+                        echo "Please input a valid option"
+                        userMenu $currentAcctNum;;
+        esac
+}
+
+userLogin() {
+        read -p "Enter your accountNumber: " inputAcctNum
+        actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
+        while [[ $actualAcctNum = "" ]]
+        do
+                read -p "Please enter a valid accountNumber: " inputAcctNum
+                actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
+        done
+
+        read -p "Enter your pin: " inputAcctPin
+        actualAcctPin=$(cat accountsFile | cut -d":" -f1,3 | grep $inputAcctNum | cut -d":" -f1)
+
+        while [[ ! $actualAcctPin -eq inputAcctPin ]]
+        do
+                read -p "Enter your pin CORRECTLY: " inputAcctPin
+        done
+
+        #take of A.
+  userMenu $inputAcctNum
+}
+
+makeNewUser() {
+        if [ ! -d ./transactionHistories ] ; then
+                mkdir transactionHistories
+        fi
+
+        userPin=0
+
+        read -p "Enter your first name: " firstName
+        read -p "Enter your last name: " lastName
+        fullName="$firstName""_""$lastName"
+
+        read -p "Enter your initial deposit ammount: " depositAmt
+        while [[ $userPin -lt 1000 || $userPin -gt 9999 ]]
+        do
+                echo  "Enter the 4 digit pin you will like to use"
+                read userPin </dev/tty
+        done
+
+        userAcctNum=$(shuf -i 1000-9999 -n 1) #change the 9999 to how ever many users you want
+        userAcctNum=$(($userAcctNum + 10010000)) #format of acctnum is 1001XXXX
+        userAcctNumAF=$userAcctNum"AF" #The users account number for the accountsFile File
+
+        printf "\nYour account number is: $userAcctNum please remember it!\n\n"
+        echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile #accoutsFile will only hold the intitial deposit not the current balance
+
+        userTransactions="$userAcctNum"
+        touch transactionHistories/$userTransactions
+        echo "Balance: $depositAmt" >> transactionHistories/$userTransactions
+        echo "+$depositAmt" >> transactionHistories/$userTransactions
+}
+
+welcomeScreen() {
+        echo Which would you like to do, Please input exactly as you see it?
+        echo New User
+        echo Existing User
+        echo Exit ATM
+        read -p ":" userAns
+
+        #echo $userAns
+
+        case $userAns in
+                "New User")
+                        makeNewUser
+                        welcomeScreen;;
+                "Existing User")
+                        userLogin ;;
+                "Exit ATM")
+                        printf "\nGoodbye!\n" #echo is faster than printf but printf can print newlines \n
+                        exit;;
+                *)
+                        printf "\n-Please input a valid option-\n"
+                        welcomeScreen;;
+        esac
+}
+
+#run program
+welcomeScreen
