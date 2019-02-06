@@ -78,8 +78,7 @@ EOF
 
 userMenu() {
         currentAcctNum=$1
-        name=$(grep $inputAcctNum accountsFile | cut -d":" -f2)
-
+        name=$(grep $currentAcctNum accountsFile | cut -d":" -f2,3 | grep $currentAcctNum | cut -d":" -f1 )
         cat << EOF
 
   Welcome $name
@@ -125,13 +124,16 @@ userLogin() {
         done
 
         read -p "Enter your pin: " inputAcctPin
-        actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
+        #actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
+        actualAcctPin=$(cat accountsFile | cut -d":" -f1,3 | grep $inputAcctNum | cut -d":" -f1)
+        echo $actualAcctPin
         while [[ ! $actualAcctPin -eq inputAcctPin ]]
         do
                 read -p "Enter your pin CORRECTLY: " inputAcctPin
                 #actualAcctPin=$(grep $inputAcctPin  accountsFile | cut -d":" -f1)
         done
 
+        #take of A.
   userMenu $inputAcctNum
 }
 
@@ -153,14 +155,17 @@ makeNewUser() {
                 read userPin </dev/tty
         done
 
-        userAcctNum=$(shuf -i 1000-9999 -n 1)
-        userAcctNum=$(($userAcctNum + 10010000))
+        userAcctNum=$(shuf -i 1000-9999 -n 1) #change the 9999 to how ever many users you want
+        userAcctNum=$(($userAcctNum + 10010000)) #format of acctnum is 1001XXXX
+        userAcctNumAF=$userAcctNum"AF" #The users account number for the accountsFile File
 
-        echo "Your account number is: $userAcctNum please remember it!"
-        echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile
+        printf "\nYour account number is: $userAcctNum please remember it!\n\n"
+        #
+        #HEREHEREHEHREHEREHERE 10:49 02/06
+        #
+        echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile #accoutsFile will only hold the intitial deposit not the current balance
 
-        userTransactions="$userAcctNum" #need to add A at the end it so it doesn't grab balance else
-        #echo $userTransactions
+        userTransactions="$userAcctNum"
         touch transactionHistories/$userTransactions
         echo "Balance: $depositAmt" >> transactionHistories/$userTransactions
         echo "+$depositAmt" >> transactionHistories/$userTransactions
@@ -182,16 +187,13 @@ welcomeScreen() {
                 "Existing User")
                         userLogin ;;
                 "Exit ATM")
+                        printf "\nGoodbye!\n" #echo is faster than printf but printf can print newlines \n
                         exit;;
                 *)
-                        echo " "
-                        echo "Please input a valid option"
+                        printf "\n-Please input a valid option-\n"
                         welcomeScreen;;
         esac
 }
 
-startATM() {
-        welcomeScreen
-}
-
-startATM
+#run program
+welcomeScreen
