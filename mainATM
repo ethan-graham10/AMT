@@ -1,15 +1,43 @@
 #!/bin/bash
 #Script Name: ATM
 #This script only holds up to 9999 bank accounts
+#=====================================================================
+# HEADER
+#=====================================================================
+#% DESCRIPTION
+#%      This script creates an ATM System which:
+#%              *Creates and holders users
+#%              *Allows Users to Sign into the System
+#%              *Allows for checking of balance
+#%              *Creates a mini bank summary
+#%              *Deposits and Withdraws funds
+#=====================================================================
+
+#==============Function Header======================================
+# This function prints a mini bank statement
+#
+# This function will display the current users:
+#               Names
+#               Account Number
+#               The current date
+#               The current time
+#               The users transaction history, up to the last five transactions
+#
+# (Params): None
+#
+# (Args): None
+#
+# (Key Side effects): None
+#===================================================================
 miniStatement() {
-if [[ $(cat transactionHistories/$currentAcctNum | wc -l) -gt 6 ]] ; then
-        transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance | tail -5)
-else
-        transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance)
-fi
+        if [[ $(cat transactionHistories/$currentAcctNum | wc -l) -gt 6 ]] ; then
+                transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance | tail -5)
+        else
+                transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance)
+        fi
 
         cat << EOF
-                                        Your Mini-Account Statement
+        Your Mini-Account Statement
 
 Account Name: $(grep $inputAcctNum accountsFile | cut -d":" -f2)
 Account Number: $currentAcctNum
@@ -24,6 +52,25 @@ $transHist
 EOF
 }
 
+#==============Function Header======================================
+# This function allows the user to deposit to their account
+#
+# This function will
+#   Ask the user how much they would like to deposit
+#   deposit the funds to their account
+#   Add this transaction to their transaction history
+#
+# (Params): None
+#
+# (Args): None
+#
+# (Key Side effects):
+#
+#   transtionHistories/currentAcctNum:
+#                       Function changes the balance of the file to the new balance
+#                       with the current deposit.
+#                       Appends a line to file representing the deposit.
+#===================================================================
 deposit() {
           read -p "How much would you like to deposit?: " depoAmt
                 if [[ $depoAmt =~ ^[0-9]+$ ]] ; then
@@ -43,39 +90,72 @@ deposit() {
         echo Deposit Complete
 }
 
+#==============Function Header======================================
+# This function allows the user to withdraw from their account
+#
+# This function will
+#   Ask the user how much they would like to withdraw
+#   Make sure that the user has the funds to withdraw
+#               Withdraw the funds from their account
+#   Add this transaction to their transaction history
+#
+#       (Params): None
+#
+# (Args): None
+#
+# (Key Side effects):
+#   transtionHistories/currentAcctNum:
+#     Function changes the balance of the file to the new balance
+#       with the current withdraw.
+#     Appends a line to file representing the deposit.
+#===================================================================
 withdraw() {
         cat << EOF
 
         How much would you like to withdraw? Please input option exactly as you see it.
-        \$10, \$20, \$50, \$100, \$200, Other amount(simply input number), Back to main
+        \$10, \$20, \$50, \$100, \$200, Other amount(simply input number),
+        --back to main currently unavailable
 EOF
 
         read -p ":" wdAmt
-
         balance=$(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
 
-        if [[ $wdAmt =~ ^[0-9]+$ || $wdAmt = "Back to main" ]] ; then
-        ###############we are here in the above if. make sure that if the initial deposit is 100, withdraw 20 works
-                if [[ $wdAmt = "Back to main" ]] ; then
-                        userMenu;
-                elif [[ $wdAmt -gt $balance ]] ; then
-                        echo "Please input a number that won't overdraft your account"
-                        withdraw;
-                else
-                        newBalance=$(($balance - $wdAmt))
-                fi
-        else
-                echo Please input a valid option
-                withdraw;
-        fi
+        while [[ ! $wdAmt =~ ^[0-9]+$ || $wdAmt -gt $balance ]]
+        do
+                echo "Please input a number that won't overdraft your account or 'Back to main'"
+                read -p ":" wdAmt
+        done
+
+        newBalance=$(($balance - $wdAmt))
 
   echo "Balance: $newBalance" > transactionHistories/"new"$currentAcctNum
         cat transactionHistories/$currentAcctNum | grep -w -v Balance >> transactionHistories/"new"$currentAcctNum
         rm transactionHistories/$currentAcctNum
         mv transactionHistories/"new"$currentAcctNum transactionHistories/$currentAcctNum
   echo -$wdAmt >> transactionHistories/$currentAcctNum
+
+        echo Withdraw Complete
 }
 
+#==============Function Header======================================
+# This function acts as the navigation menu for a logged in user
+#
+# This function will
+#   Display the users current balance
+#   Allow the user to navigate to the Withdraw screen
+#   Allow the user to navigate to the Deposit screen
+#               Display a mini bank statement
+#               Allow the user to logout back to the welcome screen
+#
+# (Params):
+#
+#               currentAcctNum : str
+#                       The account number for the logged in user
+#
+# (Args):
+#
+# (Key Side effects):
+#===================================================================
 userMenu() {
         currentAcctNum=$1
         name=$(grep $currentAcctNum accountsFile | cut -d":" -f2,3 | grep $currentAcctNum | cut -d":" -f1 )
@@ -109,14 +189,32 @@ EOF
                 "5")
                         welcomeScreen;;
                 *)
-                        echo " "
+                        echo "Please input a valid option"
                         userMenu $currentAcctNum;;
         esac
 }
 
+#==============Function Header======================================
+# This function logs in existing users
+#
+# This function will
+#   Ask the user for their account name and checks that it exists
+#               Will only log in a user based on the pin associated with their
+#       account
+#
+# (Params): None
+#
+#       (Args):
+#
+#               inputAcctNum : str
+#                       Sends the account number for this login to the userMenu
+#
+#       (Key Side effects):
+#===================================================================
 userLogin() {
         read -p "Enter your accountNumber: " inputAcctNum
         actualAcctNum=$(cut -d":" -f3 accountsFile | grep -w $inputAcctNum)
+
         while [[ $actualAcctNum = "" ]]
         do
                 read -p "Please enter a valid accountNumber: " inputAcctNum
@@ -124,19 +222,44 @@ userLogin() {
         done
 
         read -p "Enter your pin: " inputAcctPin
-        #actualAcctPin=$(grep $inputAcctNum  accountsFile | cut -d":" -f1)
         actualAcctPin=$(cat accountsFile | cut -d":" -f1,3 | grep $inputAcctNum | cut -d":" -f1)
-        echo $actualAcctPin
+
         while [[ ! $actualAcctPin -eq inputAcctPin ]]
         do
                 read -p "Enter your pin CORRECTLY: " inputAcctPin
-                #actualAcctPin=$(grep $inputAcctPin  accountsFile | cut -d":" -f1)
         done
 
-        #take of A.
   userMenu $inputAcctNum
 }
 
+#==============Function Header======================================
+# This function creates new users
+#
+#       This function will
+#               Create a new user with a first and last name
+#               Create an account number for the user
+#               Allow for the user to create their own pin
+#               Create a transaction history for the user that includes
+#                       the initial deposit made by the user
+#
+# (Params): None
+#
+# (Key Side effects)
+#
+#       userAcctNum : str
+#               The account number for the user
+#
+#       transactionHistories : directory
+#               The directory that will hold the files used to hold the
+#               transaction history for each user
+#
+#       transactionHistories/$userTransactions : file
+#       The file that holds the transaction history for the user
+#
+# accountsFile : file
+#               Holds the account info for the users in the format:
+#               pin:name of the user:account number: initial deposit
+#===================================================================
 makeNewUser() {
         if [ ! -d ./transactionHistories ] ; then
                 mkdir transactionHistories
@@ -157,12 +280,8 @@ makeNewUser() {
 
         userAcctNum=$(shuf -i 1000-9999 -n 1) #change the 9999 to how ever many users you want
         userAcctNum=$(($userAcctNum + 10010000)) #format of acctnum is 1001XXXX
-        userAcctNumAF=$userAcctNum"AF" #The users account number for the accountsFile File
 
         printf "\nYour account number is: $userAcctNum please remember it!\n\n"
-        #
-        #HEREHEREHEHREHEREHERE 10:49 02/06
-        #
         echo "$userPin:$fullName:$userAcctNum:$depositAmt" >> accountsFile #accoutsFile will only hold the intitial deposit not the current balance
 
         userTransactions="$userAcctNum"
@@ -171,14 +290,21 @@ makeNewUser() {
         echo "+$depositAmt" >> transactionHistories/$userTransactions
 }
 
+#==============Function Header======================================
+#       This function acts as the welcome screen for the user
+#
+# This function allows the user to either log in, create a new user,
+#               or Exit the ATM all together.
+#
+# (Params): None
+#===================================================================
+
 welcomeScreen() {
         echo Which would you like to do, Please input exactly as you see it?
         echo New User
         echo Existing User
         echo Exit ATM
         read -p ":" userAns
-
-        echo $userAns
 
         case $userAns in
                 "New User")
