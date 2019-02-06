@@ -1,25 +1,27 @@
-
 #!/bin/bash
 #Script Name: ATM
 #This script only holds up to 9999 bank accounts
 miniStatement() {
+if [[ $(cat transactionHistories/$currentAcctNum | wc -l) -gt 6 ]] ; then
+        transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance | tail -5)
+else
+        transHist=$(cat transactionHistories/$currentAcctNum | grep -w -v Balance)
+fi
+
         cat << EOF
-        Account Name: $(grep $inputAcctNum accountsFile | cut -d":" -f2)
-        Account Number: $currentAcctNum
-        Date: $(date +%D)
-        Time: $(date +%R)
+                                        Your Mini-Account Statement
+
+Account Name: $(grep $inputAcctNum accountsFile | cut -d":" -f2)
+Account Number: $currentAcctNum
+
+Date: $(date +%D)
+Time: $(date +%R)
+
+$(cat transactionHistories/$currentAcctNum | grep -w Balance)
+
+Your transactions are: (up to your last 5)
+$transHist
 EOF
-
-while read line
-do
-        echo $line
-done < "$(transactionHistories/$currentAcctNum)"
-
-
-        #decide on formating
-        #Put me in the EOF:::Account Balance: $(cat transactionHistories/$currentAcctNum | head -1 | cut -d":" -f2 | tr -d "[:space:]")
-        #cat transactionHistories/$currentAcctNum | grep -w -v Balance
-        #cat transactionHistories/$currentAcctNum
 }
 
 deposit() {
