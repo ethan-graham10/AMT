@@ -1,15 +1,14 @@
 # ATM
 This script makes an ATM 
 
-This script: 
-  holds up to 9999 bank accounts 
-  
-  welcomes the user
-  
-  creates new users 
-  
-  creates the storage system for individual user information
-  
-  creates the folder for files that hold the last 5 transactions for each account
+This script creates an ATM System which:
+ Welcomes the user
+ Creates and holders users
+ Allows Users to Sign into the System
+ Gives users a navigation of system functions 
+ Allows for checking of balance
+ Creates a mini bank summary
+ Deposits and Withdraws funds
+
   
   
