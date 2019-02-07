@@ -6,9 +6,9 @@ This script makes an ATM
     
     *Welcomes the user
     
-    *Creates and holders users
+    *Creates and hold users
     
-    *Allows Users to Sign into the System
+    *Allows users to sign into the system
     
     *Gives users a navigation of system functions 
     
